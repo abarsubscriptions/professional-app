@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/request';
+import type { NextRequest } from 'next/server';
 
 // Example secret key - in a real app, this would be in .env
 const API_SECRET = process.env.API_SECRET || 'premium_secret_123';
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   // Only authorize API routes
   if (request.nextUrl.pathname.startsWith('/api')) {
     // Skip auth for error logging endpoint to avoid loops
@@ -18,7 +18,7 @@ export function middleware(request: NextRequest) {
       // Log unauthorized attempt (Edge compatible)
       console.warn('Unauthorized API access attempt:', {
         url: request.url,
-        ip: request.ip,
+        ip: request.headers.get('x-forwarded-for') || '127.0.0.1',
       });
 
       return NextResponse.json(
