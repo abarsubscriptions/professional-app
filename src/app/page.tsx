@@ -62,6 +62,15 @@ export default function Dashboard() {
           <button onClick={fetchData} className="btn-primary">
             Refresh Data
           </button>
+          <button
+            onClick={() => {
+              document.cookie = "auth_session=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+              window.location.href = "/session-expired";
+            }}
+            className="px-6 py-2 rounded-lg font-medium bg-red-500/10 border border-red-500/30 text-red-500 hover:bg-red-500/20 transition-all"
+          >
+            Logout
+          </button>
         </div>
       </header>
 
@@ -93,15 +102,15 @@ export default function Dashboard() {
             Test the professional error handling boundaries and real-time logging system.
           </p>
           <div className="grid grid-cols-2 gap-4">
-            <button 
+            <button
               onClick={triggerUiError}
               className="px-4 py-3 bg-red-500/10 border border-red-500/30 text-red-400 rounded-xl hover:bg-red-500/20 transition-all font-medium"
             >
               Simulate UI Crash
             </button>
-            <button 
-               className="px-4 py-3 bg-orange-500/10 border border-orange-500/30 text-orange-400 rounded-xl hover:bg-orange-500/20 transition-all font-medium"
-               onClick={() => apiClient('data?error=true').catch(err => setError(err.message))}
+            <button
+              className="px-4 py-3 bg-orange-500/10 border border-orange-500/30 text-orange-400 rounded-xl hover:bg-orange-500/20 transition-all font-medium"
+              onClick={() => apiClient('data?error=true').catch(err => setError(err.message))}
             >
               Test API Latency
             </button>
@@ -120,14 +129,14 @@ export default function Dashboard() {
             Securely download generated error log files for both Web and API instances.
           </p>
           <div className="space-y-3">
-            <button 
+            <button
               onClick={() => downloadLogs('api')}
               className="w-full flex justify-between items-center p-4 bg-white/5 rounded-xl border border-white/10 hover:border-white/30 transition-all group"
             >
               <span className="text-white">api-error.log</span>
               <span className="text-xs px-2 py-1 bg-indigo-500/20 text-indigo-400 rounded uppercase">Download</span>
             </button>
-            <button 
+            <button
               onClick={() => downloadLogs('web')}
               className="w-full flex justify-between items-center p-4 bg-white/5 rounded-xl border border-white/10 hover:border-white/30 transition-all group"
             >
