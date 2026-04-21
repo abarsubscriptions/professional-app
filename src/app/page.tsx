@@ -1,65 +1,147 @@
-import Image from "next/image";
+'use client';
 
-export default function Home() {
+import { useState, useEffect } from 'react';
+import { apiClient } from '@/lib/api-client';
+import { reportError } from '@/lib/error-reporter';
+
+export default function Dashboard() {
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchData = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await apiClient<any>('data');
+      setData(response.data);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const triggerUiError = async () => {
+    const error = new Error("Generic UI Crash triggered by user!");
+    await reportError(error);
+    throw error;
+  };
+
+  const downloadLogs = async (type: 'api' | 'web') => {
+    try {
+      const res = await fetch(`/api/export-logs?type=${type}`, {
+        headers: { 'Authorization': `Bearer premium_secret_123` }
+      });
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${type}-error.log`;
+      a.click();
+    } catch (err) {
+      alert("Failed to export logs");
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
+    <main className="max-w-6xl mx-auto p-8 space-y-12">
+      {/* Header */}
+      <header className="flex justify-between items-center bg-white/5 p-6 rounded-2xl border border-white/10 backdrop-blur-md">
+        <div className="space-y-1">
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-indigo-400 to-pink-500 bg-clip-text text-transparent">
+            Vogue Analytics Engine
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+          <p className="text-gray-400 text-sm">Professional Web & API Ecosystem</p>
+        </div>
+        <div className="flex gap-4">
+          <button onClick={fetchData} className="btn-primary">
+            Refresh Data
+          </button>
+        </div>
+      </header>
+
+      {/* Stats Grid */}
+      <section className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="premium-card">
+          <p className="text-gray-400 text-sm mb-2">Total Users</p>
+          <p className="text-4xl font-bold text-white">{data?.stats?.users || '--'}</p>
+          <div className="mt-4 h-1 bg-white/10 rounded-full overflow-hidden">
+            <div className="h-full bg-indigo-500 w-2/3"></div>
+          </div>
+        </div>
+        <div className="premium-card">
+          <p className="text-gray-400 text-sm mb-2">Active Sessions</p>
+          <p className="text-4xl font-bold text-indigo-400 font-mono">{data?.stats?.active || '--'}</p>
+        </div>
+        <div className="premium-card">
+          <p className="text-gray-400 text-sm mb-2">Revenue (YTD)</p>
+          <p className="text-4xl font-bold text-emerald-400">{data?.stats?.revenue || '--'}</p>
+        </div>
+      </section>
+
+      {/* Control Panel */}
+      <section className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Error Handling Demo */}
+        <div className="premium-card space-y-6">
+          <h3 className="text-xl font-semibold text-white">System Diagnostics</h3>
+          <p className="text-gray-400 text-sm">
+            Test the professional error handling boundaries and real-time logging system.
           </p>
+          <div className="grid grid-cols-2 gap-4">
+            <button 
+              onClick={triggerUiError}
+              className="px-4 py-3 bg-red-500/10 border border-red-500/30 text-red-400 rounded-xl hover:bg-red-500/20 transition-all font-medium"
+            >
+              Simulate UI Crash
+            </button>
+            <button 
+               className="px-4 py-3 bg-orange-500/10 border border-orange-500/30 text-orange-400 rounded-xl hover:bg-orange-500/20 transition-all font-medium"
+               onClick={() => apiClient('data?error=true').catch(err => setError(err.message))}
+            >
+              Test API Latency
+            </button>
+          </div>
+          {error && (
+            <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm">
+              API Error: {error}
+            </div>
+          )}
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+
+        {/* Log Export */}
+        <div className="premium-card space-y-6">
+          <h3 className="text-xl font-semibold text-white">Export Error Logs</h3>
+          <p className="text-gray-400 text-sm">
+            Securely download generated error log files for both Web and API instances.
+          </p>
+          <div className="space-y-3">
+            <button 
+              onClick={() => downloadLogs('api')}
+              className="w-full flex justify-between items-center p-4 bg-white/5 rounded-xl border border-white/10 hover:border-white/30 transition-all group"
+            >
+              <span className="text-white">api-error.log</span>
+              <span className="text-xs px-2 py-1 bg-indigo-500/20 text-indigo-400 rounded uppercase">Download</span>
+            </button>
+            <button 
+              onClick={() => downloadLogs('web')}
+              className="w-full flex justify-between items-center p-4 bg-white/5 rounded-xl border border-white/10 hover:border-white/30 transition-all group"
+            >
+              <span className="text-white">web-error.log</span>
+              <span className="text-xs px-2 py-1 bg-pink-500/20 text-pink-400 rounded uppercase">Download</span>
+            </button>
+          </div>
         </div>
-      </main>
-    </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="text-center text-gray-600 text-sm py-8">
+        &copy; 2026 Vogue Analytical Systems. All rights reserved. Professional Grade Architecture.
+      </footer>
+    </main>
   );
 }
